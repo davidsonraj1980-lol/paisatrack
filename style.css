@@ -1,0 +1,62 @@
+body {
+    -webkit-tap-highlight-color: transparent;
+    background-color: #F8FAFC;
+    background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.03) 0%, rgba(248, 250, 252, 0) 50%);
+}
+
+.dark body {
+    background-color: #020617;
+    /* High contrast dark */
+    background-image: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.08), transparent 40%);
+}
+
+/* Custom Scrollbar */
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 20px;
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Loading Spinner */
+.loader {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e2e8f0;
+    border-bottom-color: #7c3aed;
+    border-radius: 50%;
+    animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
