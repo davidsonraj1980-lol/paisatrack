@@ -219,6 +219,9 @@
                     btn.innerHTML = `<i data-lucide="check" class="w-5 h-5 inline-block"></i> Success!`;
                     lucide.createIcons();
 
+                    // Set Session Flag
+                    localStorage.setItem('isAuthenticated', 'true');
+
                     setTimeout(() => {
                         window.location.href = 'index.html';
                     }, 800);

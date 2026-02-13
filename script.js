@@ -40,6 +40,14 @@ function closeSettings() {
     document.getElementById('settings-modal').classList.add('hidden');
 }
 
+// Logout Logic
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('isAuthenticated');
+        window.location.href = 'login.html';
+    }
+}
+
 // 1. Local Logic Engine (Works Offline)
 function analyzeLocalAffordability(query, balance, spending) {
     const lowerQ = query.toLowerCase();
