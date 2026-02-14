@@ -23,3 +23,56 @@ async function getSession() {
     const { data, error } = await window.supabase.auth.getSession();
     return data.session;
 }
+
+// Database Helpers
+async function getTransactions() {
+    const { data: { user } } = await window.supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await window.supabase
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching transactions:', error);
+        return [];
+    }
+    return data;
+}
+
+async function addTransaction(transaction) {
+    const { data: { user } } = await window.supabase.auth.getUser();
+    if (!user) return { error: 'User not logged in' };
+
+    const { data, error } = await window.supabase
+        .from('transactions')
+        .insert([{
+            ...transaction,
+            user_id: user.id
+        }])
+        .select();
+
+    return { data, error };
+}
+
+async function getBalance() {
+    const transactions = await getTransactions();
+    let balance = 0;
+    let income = 0;
+    let expense = 0;
+
+    transactions.forEach(tx => {
+        if (tx.type === 'income') {
+            balance += parseFloat(tx.amount);
+            income += parseFloat(tx.amount);
+        } else if (tx.type === 'expense') {
+            balance -= parseFloat(tx.amount);
+            expense += parseFloat(tx.amount);
+        }
+        // Transfers might not affect "Net Width" but affect "Cash in Hand" - keeping simple for now
+    });
+
+    return { balance, income, expense, transactions };
+}

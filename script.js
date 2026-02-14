@@ -173,25 +173,132 @@ async function checkAffordability() {
 
 
 
-const userContext = {
-    totalBalance: 1245000,
-    monthlyIncome: 85000,
-    monthlySpending: 45200,
-    savingsGoal: { item: "Royal Enfield Meteor", target: 250000, current: 180000 },
-    recentTransactions: [
-        { name: "Lic India Premium", amount: -12400, category: "Insurance" },
-        { name: "Rahul (Rent Share)", amount: 8500, category: "Income" },
-        { name: "Netflix India", amount: -649, category: "Entertainment" },
-        { name: "Zomato", amount: -450, category: "Food" },
-        { name: "Local Kirana", amount: -1240, category: "Groceries" }
-    ],
-    // Data for Graph
-    monthlyStats: {
-        labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
-        income: [75000, 78000, 80000, 80000, 85000, 85000],
-        expense: [40000, 42000, 55000, 38000, 60000, 45200]
-    }
+let userContext = {
+    totalBalance: 0,
+    monthlyIncome: 0,
+    monthlySpending: 0,
+    recentTransactions: [],
+    monthlyStats: { labels: [], income: [], expense: [] }
 };
+
+let currentTxType = 'expense'; // Track current transaction type (expense/income/transfer)
+
+// --- DATA INITIALIZATION ---
+async function initData() {
+    const balanceData = await getBalance();
+
+    userContext.totalBalance = balanceData.balance;
+    userContext.monthlyIncome = balanceData.income;
+    userContext.monthlySpending = balanceData.expense;
+    userContext.recentTransactions = balanceData.transactions.slice(0, 5); // Top 5
+
+    // Simulate Chart Data for now (until we aggregate properly)
+    // In a real app, you'd aggregate transactions by month here
+    userContext.monthlyStats.labels = ['Current'];
+    userContext.monthlyStats.income = [balanceData.income];
+    userContext.monthlyStats.expense = [balanceData.expense];
+
+    updateDashboardUI();
+}
+
+function updateDashboardUI() {
+    // Update Balance
+    const balanceEl = document.querySelector('#dashboard h3.text-3xl'); // specific selector
+    if (balanceEl) balanceEl.innerText = '₹' + userContext.totalBalance.toLocaleString('en-IN');
+
+    // Update Spending
+    const spendingEl = document.querySelectorAll('#dashboard h3.text-3xl')[1];
+    if (spendingEl) spendingEl.innerText = '₹' + userContext.monthlySpending.toLocaleString('en-IN');
+
+    // Update Recent Transactions List
+    const txList = document.querySelector('.space-y-1.flex-1.overflow-y-auto');
+    if (txList) {
+        if (userContext.recentTransactions.length === 0) {
+            txList.innerHTML = '<div class="text-center text-slate-400 mt-10">No transactions yet. Add one!</div>';
+        } else {
+            txList.innerHTML = userContext.recentTransactions.map(tx => `
+                <div class="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer group">
+                    <div class="w-12 h-12 rounded-2xl ${tx.type === 'income' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'} dark:bg-opacity-20 flex items-center justify-center border border-slate-100 dark:border-white/10">
+                        <i data-lucide="${tx.type === 'income' ? 'briefcase' : 'credit-card'}" class="w-5 h-5"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">${tx.description || tx.category}</h4>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">${tx.category} • ${tx.payment_mode || 'Cash'}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold ${tx.type === 'income' ? 'text-emerald-600' : 'text-slate-800 dark:text-white'} text-sm">
+                            ${tx.type === 'expense' ? '-' : '+'}₹${parseFloat(tx.amount).toLocaleString('en-IN')}
+                        </p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">${new Date(tx.date).toLocaleDateString()}</p>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+    }
+
+    // Update Chart
+    if (cashFlowChartInstance) {
+        cashFlowChartInstance.data.datasets[0].data = userContext.monthlyStats.income;
+        cashFlowChartInstance.data.datasets[1].data = userContext.monthlyStats.expense;
+        cashFlowChartInstance.update();
+    }
+}
+
+// --- TRANSACTION HANDLING ---
+async function handleSaveTransaction() {
+    const btn = document.getElementById('btn-save-tx');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Saving...`;
+    btn.disabled = true;
+    lucide.createIcons();
+
+    const amount = document.getElementById('tx-amount').value;
+    const date = document.getElementById('tx-date').value || new Date().toISOString().split('T')[0];
+    const description = document.getElementById('tx-description').value;
+    const category = document.getElementById('tx-category').value.split(' ')[1]; // Remove emoji
+    const mode = document.getElementById('tx-mode').value;
+    const tags = document.getElementById('tx-tags').value;
+
+    if (!amount) {
+        alert("Please enter an amount");
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        return;
+    }
+
+    const txData = {
+        amount: parseFloat(amount),
+        date: date,
+        description: description,
+        category: category,
+        type: currentTxType, // 'expense', 'income', 'transfer'
+        // We can add a 'meta' column for payment mode/tags later or put in desc
+        description: description + (mode ? ` (${mode})` : '') + (tags ? ` ${tags}` : '')
+    };
+
+    const { data, error } = await addTransaction(txData);
+
+    if (error) {
+        alert("Error saving: " + error.message);
+    } else {
+        // Success
+        await initData(); // Refresh data
+        switchTab('dashboard'); // Go back to dashboard
+        // Reset form
+        document.getElementById('tx-amount').value = '';
+        document.getElementById('tx-description').value = '';
+    }
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    lucide.createIcons();
+}
+
+// Check session and load data
+checkSession().then(() => {
+    initData();
+});
 
 // --- CHART.JS INTEGRATION ---
 let cashFlowChartInstance = null;
@@ -334,6 +441,7 @@ function switchTxMode(mode) {
 
 // New Logic for Manual Transaction Type
 function setTxType(type) {
+    currentTxType = type; // Update global state
     // Reset buttons
     document.getElementById('type-expense').className = "flex-1 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-rose-600 transition-all";
     document.getElementById('type-income').className = "flex-1 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-emerald-600 transition-all";
