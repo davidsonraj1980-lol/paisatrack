@@ -12,6 +12,10 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+
     <!-- Custom Google Font: Plus Jakarta Sans -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -164,6 +168,15 @@
             updateThemeIcon();
         }
 
+        // Check if already logged in
+        async function checkLogin() {
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if (session) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkLogin();
+
         function updateThemeIcon() {
             const isDark = document.documentElement.classList.contains('dark');
             const icon = document.getElementById('theme-icon');
@@ -197,7 +210,7 @@
         }
 
         // --- LOGIN LOGIC ---
-        function handleLogin(event) {
+        async function handleLogin(event) {
             event.preventDefault();
 
             const form = event.target;
@@ -210,45 +223,50 @@
             btn.disabled = true;
             btn.innerHTML = `<span class="loader border-t-white border-white/30 w-5 h-5 inline-block rounded-full animate-spin"></span> Signing In...`;
 
-            // Simulate Network Request
-            setTimeout(() => {
-                if (email === 'spooderman@gmail.com' && password === 'abc123') {
+            // Supabase Auth
+            try {
+                const { data, error } = await window.supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) throw error;
+
+                if (data) {
                     // Success
+                    console.log("Login Successful:", data);
                     btn.classList.remove('from-primary-600', 'to-indigo-600');
                     btn.classList.add('bg-green-500', 'hover:bg-green-600', 'shadow-green-500/25');
                     btn.innerHTML = `<i data-lucide="check" class="w-5 h-5 inline-block"></i> Success!`;
                     lucide.createIcons();
 
-                    // Set Session Flag
                     localStorage.setItem('isAuthenticated', 'true');
 
                     setTimeout(() => {
                         window.location.href = 'index.html';
                     }, 800);
-                } else {
-                    // Error
-                    btn.classList.remove('from-primary-600', 'to-indigo-600');
-                    btn.classList.add('bg-red-500', 'hover:bg-red-600', 'shadow-red-500/25');
-                    btn.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5 inline-block"></i> Invalid Credentials`;
-                    lucide.createIcons();
-
-                    form.querySelector('input[type="email"]').classList.add('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
-                    form.querySelector('input[type="password"]').classList.add('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
-
-                    setTimeout(() => {
-                        // Reset Button
-                        btn.disabled = false;
-                        btn.classList.remove('bg-red-500', 'hover:bg-red-600', 'shadow-red-500/25');
-                        btn.classList.add('from-primary-600', 'to-indigo-600');
-                        btn.innerHTML = originalBtnContent;
-                        lucide.createIcons();
-
-                        // Reset Inputs
-                        form.querySelector('input[type="email"]').classList.remove('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
-                        form.querySelector('input[type="password"]').classList.remove('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
-                    }, 2000);
                 }
-            }, 1000);
+            } catch (err) {
+                // Error Handling
+                console.error("Login Error:", err);
+                btn.classList.remove('from-primary-600', 'to-indigo-600');
+                btn.classList.add('bg-red-500', 'hover:bg-red-600', 'shadow-red-500/25');
+                btn.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5 inline-block"></i> ${err.message || "Login Failed"}`;
+                lucide.createIcons();
+
+                form.querySelector('input[type="email"]').classList.add('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
+                form.querySelector('input[type="password"]').classList.add('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.classList.remove('bg-red-500', 'hover:bg-red-600', 'shadow-red-500/25');
+                    btn.classList.add('from-primary-600', 'to-indigo-600');
+                    btn.innerHTML = originalBtnContent;
+                    lucide.createIcons();
+                    form.querySelector('input[type="email"]').classList.remove('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
+                    form.querySelector('input[type="password"]').classList.remove('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
+                }, 3000);
+            }
         }
 
     </script>

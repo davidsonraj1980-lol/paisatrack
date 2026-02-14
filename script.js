@@ -41,13 +41,27 @@ function closeSettings() {
 }
 
 // Logout Logic
-function logout() {
+async function logout() {
     if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('isAuthenticated');
+        await window.supabase.auth.signOut();
+        localStorage.removeItem('isAuthenticated'); // Clear legacy flag just in case
         window.location.href = 'login.html';
     }
 }
 
+// Check Session on Load
+async function checkSession() {
+    const { data: { session } } = await window.supabase.auth.getSession();
+    if (!session) {
+        // Double check local storage for legacy/fallback, but rely on Supabase
+        window.location.href = 'login.html';
+    } else {
+        localStorage.setItem('isAuthenticated', 'true'); // Keep legacy flag in sync
+    }
+}
+
+// Run Session Check
+checkSession();
 // 1. Local Logic Engine (Works Offline)
 function analyzeLocalAffordability(query, balance, spending) {
     const lowerQ = query.toLowerCase();

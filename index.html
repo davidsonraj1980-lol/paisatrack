@@ -17,6 +17,10 @@
     <!-- Chart.js for Working Graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+
     <!-- Custom Google Font: Plus Jakarta Sans -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -25,11 +29,6 @@
     <link rel="stylesheet" href="style.css">
 
     <script>
-        // Check Authentication
-        if (!localStorage.getItem('isAuthenticated')) {
-            window.location.href = 'login.html';
-        }
-
         tailwind.config = {
             darkMode: 'class',
             theme: {
