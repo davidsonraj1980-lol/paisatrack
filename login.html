@@ -244,25 +244,19 @@
 
                 if (error) throw error;
 
-                // Error Handling
-                console.error("Login Error:", err);
-                btn.classList.remove('from-primary-600', 'to-indigo-600');
-                btn.classList.add('bg-red-500', 'hover:bg-red-600', 'shadow-red-500/25');
-                btn.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5 inline-block"></i> ${err.message || "Login Failed"}`;
-                lucide.createIcons();
+                // Success! Redirect to dashboard
+                // Small delay to show success state if desired, but redirect is cleaner
+                window.location.href = 'index.html';
 
-                form.querySelector('input[type="email"]').classList.add('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
-                form.querySelector('input[type="password"]').classList.add('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
+            } catch (error) {
+                console.error('Login error:', error.message);
+                errorMessage.textContent = error.message;
+                errorMessage.classList.remove('hidden');
 
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.classList.remove('bg-red-500', 'hover:bg-red-600', 'shadow-red-500/25');
-                    btn.classList.add('from-primary-600', 'to-indigo-600');
-                    btn.innerHTML = originalBtnContent;
-                    lucide.createIcons();
-                    form.querySelector('input[type="email"]').classList.remove('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
-                    form.querySelector('input[type="password"]').classList.remove('border-red-500', 'focus:ring-red-200', 'focus:border-red-500');
-                }, 3000);
+                // Reset button state
+                loginBtn.disabled = false;
+                loginText.classList.remove('hidden');
+                loginSpinner.classList.add('hidden');
             }
         }
 
