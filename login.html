@@ -20,8 +20,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
 
-    <!-- External Styles -->
-    <link rel="stylesheet" href="style.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
 
     <script>
         tailwind.config = {
@@ -194,7 +194,15 @@
         }
         setTimeout(updateThemeIcon, 100);
 
-        // --- PASSWORD TOGGLE ---
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if (session) {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Toggle Password Visibility
         function togglePassword() {
             const passwordInput = document.getElementById('password');
             const eyeIcon = document.getElementById('eye-icon');
@@ -209,21 +217,25 @@
             lucide.createIcons();
         }
 
-        // --- LOGIN LOGIC ---
+        // Login Function
         async function handleLogin(event) {
             event.preventDefault();
 
-            const form = event.target;
-            const email = form.querySelector('input[type="email"]').value;
-            const password = form.querySelector('input[type="password"]').value;
-            const btn = form.querySelector('button[type="submit"]');
-            const originalBtnContent = `<span>Sign In</span><i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>`;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('error-message');
+            const loginBtn = document.getElementById('login-btn');
+            const loginText = document.getElementById('login-text');
+            const loginSpinner = document.getElementById('login-spinner');
 
-            // Loading State
-            btn.disabled = true;
-            btn.innerHTML = `<span class="loader border-t-white border-white/30 w-5 h-5 inline-block rounded-full animate-spin"></span> Signing In...`;
+            // Reset error
+            errorMessage.classList.add('hidden');
 
-            // Supabase Auth
+            // Show loading state
+            loginBtn.disabled = true;
+            loginText.classList.add('hidden');
+            loginSpinner.classList.remove('hidden');
+
             try {
                 const { data, error } = await window.supabase.auth.signInWithPassword({
                     email: email,
@@ -232,21 +244,6 @@
 
                 if (error) throw error;
 
-                if (data) {
-                    // Success
-                    console.log("Login Successful:", data);
-                    btn.classList.remove('from-primary-600', 'to-indigo-600');
-                    btn.classList.add('bg-green-500', 'hover:bg-green-600', 'shadow-green-500/25');
-                    btn.innerHTML = `<i data-lucide="check" class="w-5 h-5 inline-block"></i> Success!`;
-                    lucide.createIcons();
-
-                    localStorage.setItem('isAuthenticated', 'true');
-
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 800);
-                }
-            } catch (err) {
                 // Error Handling
                 console.error("Login Error:", err);
                 btn.classList.remove('from-primary-600', 'to-indigo-600');
